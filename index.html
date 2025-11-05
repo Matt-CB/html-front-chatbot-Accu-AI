@@ -518,6 +518,11 @@
             const debugElement = document.getElementById('debugInfo');
             debugElement.innerHTML = `🔧 Debug: ${message}`;
             console.log('DEBUG:', message);
+            
+            // Check for mixed content issues
+            if (window.location.protocol === 'https:' && apiUrl.startsWith('http:')) {
+                debugElement.innerHTML += `<br>⚠️ WARNING: Mixed Content - HTTPS site trying to access HTTP API`;
+            }
         }
 
         // Initialize

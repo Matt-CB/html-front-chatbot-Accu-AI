@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accu-AI Connection Diagnostics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Accu-AI Connection Diagnostics</h1>
+        
+        <div id="environmentInfo" class="test-result info">
+            <strong>Environment Information:</strong><br>
+            <span id="envDetails">Loading...</span>
+        </div>
+
+        <div class="test-result warning">
+            <strong>⚠️ Mixed Content Check:</strong><br>
+            <span id="mixedContentCheck">Checking...</span>
+        </div>
+
+        <button onclick="testConnection()">🔗 Test API Connection</button>
+        <button onclick="testCORS()">🌐 Test CORS</button>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+
+        <h3>🔍 Test Results:</h3>
+        <div id="results"></div>
+
+        <h3>📋 Detailed Log:</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://35.173.198.211:8000';
+        let logElement = document.getElementById('log');
+        let resultsElement = document.getElementById('results');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsElement.appendChild(div);
+        }
+
+        function clearLog() {
+            logElement.textContent = '';
+            resultsElement.innerHTML = '';
+        }
+
+        // Check environment on load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkEnvironment();
+            checkMixedContent();
+        });
+
+        function checkEnvironment() {
+            const info = {
+                'Page Protocol': window.location.protocol,
+                'Page Host': window.location.host,
+                'API URL': API_URL,
+                'API Protocol': API_URL.split(':')[0],
+                'User Agent': navigator.userAgent.split(' ')[0],
+                'Browser': getBrowserName(),
+                'Is Mobile': /Mobile|Android|iPhone|iPad/.test(navigator.userAgent),
+                'Is Local': window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
+                'Is HTTPS': window.location.protocol === 'https:'
+            };
+
+            let envText = '';
+            for (const [key, value] of Object.entries(info)) {
+                envText += `${key}: ${value}<br>`;
+            }
+            
+            document.getElementById('envDetails').innerHTML = envText;
+            log('Environment check completed');
+        }
+
+        function getBrowserName() {
+            const ua = navigator.userAgent;
+            if (ua.includes('Chrome')) return 'Chrome';
+            if (ua.includes('Firefox')) return 'Firefox';
+            if (ua.includes('Safari')) return 'Safari';
+            if (ua.includes('Edge')) return 'Edge';
+            return 'Unknown';
+        }
+
+        function checkMixedContent() {
+            const isHTTPS = window.location.protocol === 'https:';
+            const apiIsHTTP = API_URL.startsWith('http:');
+            
+            if (isHTTPS && apiIsHTTP) {
+                document.getElementById('mixedContentCheck').innerHTML = 
+                    '❌ <strong>MIXED CONTENT DETECTED!</strong><br>' +
+                    'Your site is HTTPS but API is HTTP. This will be blocked by browsers.<br>' +
+                    '<strong>Solution:</strong> Use HTTPS for your API or deploy to HTTP hosting.';
+                log('ERROR: Mixed content detected - HTTPS site trying to access HTTP API');
+                addResult('❌ <strong>Mixed Content Issue Found</strong><br>This is likely why your app isn\'t working when deployed.', 'error');
+            } else {
+                document.getElementById('mixedContentCheck').innerHTML = '✅ No mixed content issues detected';
+                log('Mixed content check passed');
+            }
+        }
+
+        async function testConnection() {
+            log('Testing API connection...');
+            addResult('🔄 Testing API connection...', 'info');
+
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                log(`Response received in ${duration}ms`);
+                log(`Status: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Response data: ${JSON.stringify(data, null, 2)}`);
+                    addResult(`✅ <strong>API Connection Successful!</strong><br>Status: ${response.status}<br>Response time: ${duration}ms`, 'success');
+                } else {
+                    log(`Error response: ${response.status} ${response.statusText}`);
+                    addResult(`❌ <strong>API Error</strong><br>Status: ${response.status} ${response.statusText}`, 'error');
+                }
+
+            } catch (error) {
+                log(`Connection failed: ${error.message}`);
+                log(`Error type: ${error.name}`);
+                
+                if (error.message.includes('Mixed Content')) {
+                    addResult('❌ <strong>Mixed Content Error</strong><br>HTTPS site cannot access HTTP API', 'error');
+                } else if (error.message.includes('CORS')) {
+                    addResult('❌ <strong>CORS Error</strong><br>Cross-origin request blocked', 'error');
+                } else if (error.message.includes('net::ERR_FAILED')) {
+                    addResult('❌ <strong>Network Error</strong><br>Cannot reach the API server', 'error');
+                } else {
+                    addResult(`❌ <strong>Connection Failed</strong><br>${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testCORS() {
+            log('Testing CORS configuration...');
+            addResult('🔄 Testing CORS...', 'info');
+
+            try {
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin
+                    }
+                });
+
+                log(`CORS preflight response: ${response.status}`);
+                
+                // Check CORS headers
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+
+                log(`CORS headers: ${JSON.stringify(corsHeaders, null, 2)}`);
+
+                if (response.ok || response.status === 200 || response.status === 204) {
+                    addResult('✅ <strong>CORS Working</strong><br>Server accepts cross-origin requests', 'success');
+                } else {
+                    addResult(`❌ <strong>CORS Issue</strong><br>Preflight response: ${response.status}`, 'error');
+                }
+
+            } catch (error) {
+                log(`CORS test failed: ${error.message}`);
+                addResult(`❌ <strong>CORS Test Failed</strong><br>${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
