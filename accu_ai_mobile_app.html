@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Accu-AI Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+            font-weight: 400;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .menu-toggle {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 90%;
+            max-width: 350px;
+            height: 100vh;
+            background: white;
+            z-index: 1000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+        }
+
+        .sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+        }
+
+        .close-sidebar {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .sidebar-content {
+            padding: 20px;
+        }
+
+        .user-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .user-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #2c3e50;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+        }
+
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            position: relative;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            resize: none;
+            max-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .send-btn {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .quick-btn {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #555;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:active {
+            background: #e9ecef;
+            transform: translateY(1px);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading-dots {
+            display: flex;
+            margin-left: 10px;
+        }
+
+        .loading-dot {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: loadingDot 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loadingDot {
+            0%, 80%, 100% { opacity: 0.3; }
+            40% { opacity: 1; }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .treatment-preview {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+        }
+
+        .treatment-preview h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        /* Mobile-specific adjustments */
+        @media (max-width: 480px) {
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .messages {
+                padding: 10px;
+            }
+            
+            .input-area {
+                padding: 10px;
+            }
+            
+            .message-content {
+                max-width: 90%;
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Debug info -->
+    <div class="debug-info" id="debugInfo">
+        🔧 Debug: Initializing...
+    </div>
+
+    <!-- Overlay for sidebar -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>🌟 Accu-AI</h1>
+        <p>Your Mobile Medical Assistant</p>
+        <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Settings</h2>
+            <button class="close-sidebar" id="closeSidebar">✕</button>
+        </div>
+        <div class="sidebar-content">
+            <div class="user-section">
+                <h3>👤 User Information</h3>
+                <div class="input-group">
+                    <label for="userId">Your User ID:</label>
+                    <input type="text" id="userId" placeholder="Enter your unique ID" />
+                </div>
+                <div class="input-group">
+                    <label for="apiUrlInput">API Server:</label>
+                    <input type="text" id="apiUrlInput" value="http://35.173.198.211:8000" />
+                </div>
+                <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+            </div>
+
+            <div class="user-section">
+                <h3>🏥 Quick Actions</h3>
+                <button class="btn btn-success" onclick="sendQuickMessage('Show me my current symptoms')">📋 View Symptoms</button>
+                <button class="btn btn-warning" onclick="getLastTreatment()">💊 Last Treatment</button>
+                <button class="btn" onclick="sendQuickMessage('I need treatment recommendations')">🎯 Get Treatment</button>
+                <button class="btn" onclick="testConnection()">🔗 Test Connection</button>
+            </div>
+
+            <div class="treatment-preview" id="treatmentPreview" style="display: none;">
+                <h4>📊 Recent Treatment</h4>
+                <div id="treatmentSummary">No recent treatments found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat -->
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="message assistant">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    👋 Hello! I'm Accu-AI, your mobile medical assistant. I can help you:
+                    <br><br>
+                    • Track your symptoms with severity ratings
+                    <br>• Recommend acupuncture treatments
+                    <br>• Monitor your health progress
+                    <br><br>
+                    Please enter your User ID in the menu (☰) and tell me about any symptoms you're experiencing!
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="quick-actions">
+                <div class="quick-btn" onclick="sendQuickMessage('I have a headache')">🤕 Headache</div>
+                <div class="quick-btn" onclick="sendQuickMessage('I feel nauseous')">🤢 Nausea</div>
+                <div class="quick-btn" onclick="sendQuickMessage('My back hurts')">🔙 Back Pain</div>
+                <div class="quick-btn" onclick="sendQuickMessage('I have a fever')">🌡️ Fever</div>
+                <div class="quick-btn" onclick="sendQuickMessage('Show my symptoms')">📋 Status</div>
+            </div>
+            <div class="input-container">
+                <textarea 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Describe your symptoms..."
+                    rows="1"
+                ></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLoading = false;
+        let userId = '';
+        let apiUrl = 'http://35.173.198.211:8000'; // Default API URL
+
+        // Debug function
+        function updateDebug(message) {
+            const debugElement = document.getElementById('debugInfo');
+            debugElement.innerHTML = `🔧 Debug: ${message}`;
+            console.log('DEBUG:', message);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDebug('Loading...');
+            loadSavedSettings();
+            setupEventListeners();
+            autoResizeTextarea();
+            testConnection();
+        });
+
+        function setupEventListeners() {
+            // Sidebar controls
+            document.getElementById('menuToggle').addEventListener('click', openSidebar);
+            document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
+            document.getElementById('overlay').addEventListener('click', closeSidebar);
+
+            // Input handling
+            const input = document.getElementById('messageInput');
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            input.addEventListener('input', autoResizeTextarea);
+        }
+
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('messageInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+        }
+
+        function saveSettings() {
+            const userIdInput = document.getElementById('userId');
+            const apiUrlInput = document.getElementById('apiUrlInput');
+            
+            const newUserId = userIdInput.value.trim();
+            const newApiUrl = apiUrlInput.value.trim();
+            
+            if (newUserId) {
+                userId = newUserId;
+                localStorage.setItem('accuai_user_id', userId);
+            }
+            
+            if (newApiUrl) {
+                apiUrl = newApiUrl;
+                localStorage.setItem('accuai_api_url', apiUrl);
+            }
+            
+            updateDebug(`Settings saved - API: ${apiUrl}, User: ${userId}`);
+            addMessage(`✅ Settings saved - API: ${apiUrl}, User: ${userId}`, 'assistant');
+            loadLastTreatment();
+            closeSidebar();
+        }
+
+        function loadSavedSettings() {
+            const savedUserId = localStorage.getItem('accuai_user_id');
+            const savedApiUrl = localStorage.getItem('accuai_api_url');
+            
+            if (savedUserId) {
+                userId = savedUserId;
+                document.getElementById('userId').value = userId;
+            }
+            
+            if (savedApiUrl) {
+                apiUrl = savedApiUrl;
+                document.getElementById('apiUrlInput').value = apiUrl;
+            }
+            
+            updateDebug(`Loaded settings - API: ${apiUrl}, User: ${userId || 'Not set'}`);
+            loadLastTreatment();
+        }
+
+        async function testConnection() {
+            updateDebug('Testing connection...');
+            
+            try {
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDebug(`✅ Connected to API - Status: ${data.status}`);
+                    addMessage(`✅ Connected to API successfully!`, 'assistant');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                updateDebug(`❌ Connection failed: ${error.message}`);
+                addMessage(`❌ Connection failed: ${error.message}. Please check your API URL in settings.`, 'assistant');
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || isLoading) return;
+            
+            if (!userId) {
+                alert('Please set your User ID in the menu (☰)');
+                openSidebar();
+                return;
+            }
+
+            updateDebug(`Sending message to ${apiUrl}/chat`);
+            addMessage(message, 'user');
+            input.value = '';
+            autoResizeTextarea();
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${apiUrl}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        message: message
+                    })
+                });
+
+                updateDebug(`Response: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateDebug(`Received response type: ${data.response_type}`);
+                
+                // Handle different response types
+                if (data.response_type === 'treatment_recommendation' && data.treatment_options) {
+                    addTreatmentMessage(data);
+                    updateTreatmentPreview(data);
+                } else {
+                    addMessage(data.message || 'No response received', 'assistant');
+                }
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                updateDebug(`❌ Error: ${error.message}`);
+                addMessage(`❌ Connection error: ${error.message}. Please check your internet and API settings.`, 'assistant');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+            closeSidebar();
+        }
+
+        function addMessage(content, sender) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'user' ? 'U' : 'AI';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = formatMessage(content);
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addTreatmentMessage(data) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'AI';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            let treatmentHtml = `<strong>🎯 ${data.message}</strong><br><br>`;
+            
+            // Add condition type if available
+            if (data.condition_type) {
+                treatmentHtml += `<strong>🏥 Condition Type:</strong> ${data.condition_type}<br><br>`;
+            }
+            
+            if (data.treatment_options && data.treatment_options.length > 0) {
+                treatmentHtml += '<strong>📋 Treatment Options:</strong><br><br>';
+                
+                data.treatment_options.forEach((option, index) => {
+                    treatmentHtml += `<div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">`;
+                    treatmentHtml += `<strong>Option ${option.rank} (Score: ${option.effectiveness_score})</strong><br>`;
+                    treatmentHtml += `<em>${option.reasoning}</em><br><br>`;
+                    
+                    if (option.points && option.points.length > 0) {
+                        treatmentHtml += '<strong>Acupuncture Points:</strong><br>';
+                        option.points.forEach(point => {
+                            treatmentHtml += `• <strong>${point.point_name}</strong> (${point.channel_name})<br>`;
+                            if (point.matched_symptoms && point.matched_symptoms.length > 0) {
+                                treatmentHtml += `  → Treats: ${point.matched_symptoms.join(', ')}<br>`;
+                            }
+                        });
+                    }
+                    treatmentHtml += '</div>';
+                });
+            }
+            
+            contentDiv.innerHTML = formatMessage(treatmentHtml);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function formatMessage(content) {
+            // Convert markdown-style formatting to HTML
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function setLoading(loading) {
+            isLoading = loading;
+            const sendBtn = document.getElementById('sendBtn');
+            const messagesContainer = document.getElementById('messages');
+            
+            if (loading) {
+                sendBtn.disabled = true;
+                sendBtn.textContent = '⏳';
+                
+                // Add loading indicator
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading';
+                loadingDiv.id = 'loadingIndicator';
+                loadingDiv.innerHTML = `
+                    <div>AI is thinking</div>
+                    <div class="loading-dots">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                `;
+                messagesContainer.appendChild(loadingDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } else {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '➤';
+                
+                // Remove loading indicator
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+            }
+        }
+
+        async function getLastTreatment() {
+            if (!userId) {
+                alert('Please set your User ID first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}/treatment/${userId}/last`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addTreatmentMessage(data.treatment);
+                    updateTreatmentPreview(data.treatment);
+                    closeSidebar();
+                } else if (response.status === 404) {
+                    addMessage('📋 No previous treatments found. Generate a treatment first by describing your symptoms.', 'assistant');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error getting last treatment:', error);
+                addMessage(`❌ Error getting last treatment: ${error.message}`, 'assistant');
+            }
+        }
+
+        async function loadLastTreatment() {
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`${apiUrl}/treatment/${userId}/last`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateTreatmentPreview(data.treatment);
+                }
+            } catch (error) {
+                // Silently fail for background loading
+                console.log('No previous treatments found');
+            }
+        }
+
+        function updateTreatmentPreview(treatmentData) {
+            const preview = document.getElementById('treatmentPreview');
+            const summary = document.getElementById('treatmentSummary');
+            
+            if (treatmentData && treatmentData.treatment_options && treatmentData.treatment_options.length > 0) {
+                const firstOption = treatmentData.treatment_options[0];
+                const pointCount = firstOption.points ? firstOption.points.length : 0;
+                
+                summary.innerHTML = `
+                    <strong>Condition:</strong> ${treatmentData.condition_type || 'Unknown'}<br>
+                    <strong>Options:</strong> ${treatmentData.treatment_options.length}<br>
+                    <strong>Top Treatment:</strong> Score ${firstOption.effectiveness_score}<br>
+                    <strong>Points:</strong> ${pointCount} acupuncture points
+                `;
+                preview.style.display = 'block';
+            } else {
+                summary.innerHTML = 'No recent treatments found.';
+                preview.style.display = 'none';
+            }
+        }
+
+        // Auto-focus on message input when chat area is tapped
+        document.getElementById('messages').addEventListener('click', function() {
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>
