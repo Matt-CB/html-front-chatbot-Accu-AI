@@ -1,8 +1,17 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/favicon.ico",
+      "dest": "/favicon.ico",
+      "status": 200
+    },
+    {
+      "src": "/diagnostic.html",
+      "dest": "/diagnostic.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "headers": [

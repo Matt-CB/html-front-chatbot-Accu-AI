@@ -615,6 +615,7 @@
             updateDebug('Testing connection...');
             
             try {
+                // First try the health endpoint
                 const response = await fetch(`${apiUrl}/health`, {
                     method: 'GET',
                     headers: {
@@ -626,12 +627,20 @@
                     const data = await response.json();
                     updateDebug(`✅ Connected to API - Status: ${data.status}`);
                     addMessage(`✅ Connected to API successfully!`, 'assistant');
+                } else if (response.status === 401) {
+                    updateDebug(`❌ 401 Unauthorized - Check API server authentication settings`);
+                    addMessage(`❌ API returned 401 Unauthorized. Your server might require authentication or have CORS issues.`, 'assistant');
                 } else {
                     throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
-                updateDebug(`❌ Connection failed: ${error.message}`);
-                addMessage(`❌ Connection failed: ${error.message}. Please check your API URL in settings.`, 'assistant');
+                if (error.message.includes('Failed to fetch')) {
+                    updateDebug(`❌ Failed to fetch - Likely CORS or mixed content issue`);
+                    addMessage(`❌ Cannot connect to API. This might be due to:\n• Mixed content (HTTPS → HTTP)\n• CORS configuration\n• Network/firewall issues\n\nCheck browser console for detailed errors.`, 'assistant');
+                } else {
+                    updateDebug(`❌ Connection failed: ${error.message}`);
+                    addMessage(`❌ Connection failed: ${error.message}. Please check your API URL in settings.`, 'assistant');
+                }
             }
         }
 
